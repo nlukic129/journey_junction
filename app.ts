@@ -1,5 +1,7 @@
-const express = require("express");
+import express from "express";
+
+import { runServer } from "./util/server";
 
 const app = express();
 
-app.listen(8080);
+runServer(app);
