@@ -7,6 +7,7 @@ export const sequelize = new Sequelize("journey_junction", "root", "nebojsa", {
 
 export const syncDatabase = async () => {
   try {
+    // await sequelize.sync({ force: true });
     await sequelize.sync();
 
     console.log("Database synced successfully");
