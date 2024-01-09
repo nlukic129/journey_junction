@@ -1,5 +1,9 @@
-const express = require("express");
+import express from "express";
+
+import { runServer } from "./util/server";
+import { createRelations } from "./util/relations";
 
 const app = express();
 
-app.listen(8080);
+createRelations();
+runServer(app);
