@@ -1,8 +1,11 @@
 import { Sequelize } from "sequelize";
 
-export const sequelize = new Sequelize("journey_junction", "root", "nebojsa", {
+import config from "../config";
+
+const { name, user, password, host } = config.db;
+export const sequelize = new Sequelize(name, user, password, {
   dialect: "mysql",
-  host: "localhost",
+  host,
 });
 
 export const syncDatabase = async () => {

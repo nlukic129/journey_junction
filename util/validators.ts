@@ -14,7 +14,7 @@ export const checkUsernameSecurity = async (value: string, User: ModelCtor<Model
   }
 };
 
-export const checkEmailSingup = async (value: string, User: ModelCtor<Model<any, any>>) => {
+export const checkEmailSignup = async (value: string, User: ModelCtor<Model<any, any>>) => {
   try {
     const existingUser = await User.findOne({ where: { email: value } });
 

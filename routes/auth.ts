@@ -3,8 +3,8 @@ import { body } from "express-validator";
 
 import User from "../models/user";
 import Role from "../models/role";
-import { checkEmailSingup, checkPasswordSecurity, checkRole, checkUsernameSecurity } from "../util/validators";
-import { signup, signin } from "../controllers/auth";
+import { checkEmailSignup, checkPasswordSecurity, checkRole, checkUsernameSecurity } from "../util/validators";
+import { signup, signIn } from "../controllers/auth";
 import { isAuth } from "../middleware/is-auth";
 import { isValidated } from "../middleware/is-validated";
 
@@ -18,7 +18,7 @@ authRouter.put(
       .withMessage("Please enter a valid email.")
       .bail()
       .normalizeEmail()
-      .custom((value) => checkEmailSingup(value, User)),
+      .custom((value) => checkEmailSignup(value, User)),
     body("password")
       .trim()
       .isLength({ min: 8 })
@@ -39,7 +39,7 @@ authRouter.put(
 );
 
 authRouter.post(
-  "/signin",
+  "/sign-in",
   [
     body("email").isEmail().withMessage("Please enter a valid email.").bail().normalizeEmail(),
     body("password")
@@ -51,6 +51,6 @@ authRouter.post(
   ],
   isAuth,
   isValidated,
-  signin
+  signIn
 );
 export default authRouter;

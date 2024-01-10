@@ -1,9 +1,20 @@
 import { validationResult } from "express-validator";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer";
+import nodemailerSendgrid from "nodemailer-sendgrid";
+import ejs from "ejs";
+import path from "path";
 
 import User from "../models/user";
 import CONFIG from "../config";
+
+const transport = nodemailer.createTransport(
+  nodemailerSendgrid({
+    // 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
+    apiKey: CONFIG.sendGridAPIKey,
+  })
+);
 
 export const signup = async (req: any, res: any, next: any) => {
   try {
@@ -23,7 +34,7 @@ export const signup = async (req: any, res: any, next: any) => {
 
     const hashedPw = await bcrypt.hash(password, 12);
 
-    const user = await User.create({
+    await User.create({
       first_name,
       last_name,
       email,
@@ -33,7 +44,16 @@ export const signup = async (req: any, res: any, next: any) => {
       is_validated: true,
     });
 
-    // TO DO: Sending validation emails
+    const relativePath = "../template/signup-email.ejs";
+    const absolutePath = path.resolve(__dirname, relativePath);
+    const template = await ejs.renderFile(absolutePath, { name: first_name });
+
+    await transport.sendMail({
+      from: CONFIG.emailSender,
+      to: email,
+      subject: "Journey Junction Email Validation",
+      html: template,
+    });
 
     res.status(201).json({ message: "User created!" });
   } catch (error) {
@@ -41,7 +61,7 @@ export const signup = async (req: any, res: any, next: any) => {
   }
 };
 
-export const signin = async (req: any, res: any, next: any) => {
+export const signIn = async (req: any, res: any, next: any) => {
   try {
     const user = req.body.user;
 
