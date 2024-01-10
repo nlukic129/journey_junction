@@ -22,11 +22,16 @@ const User = sequelize.define("User", {
     allowNull: false,
     unique: true,
   },
+  username: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+  },
   password: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  isValidated: {
+  is_validated: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
     allowNull: false,

@@ -1,6 +1,20 @@
 import { Model, ModelCtor } from "sequelize";
 
-export const checkEmail = async (value: string, User: ModelCtor<Model<any, any>>) => {
+export const checkUsernameSecurity = async (value: string, User: ModelCtor<Model<any, any>>) => {
+  try {
+    const existingUser = await User.findOne({ where: { username: value } });
+
+    if (existingUser) {
+      throw new Error("Username address already exists!");
+    }
+
+    return true;
+  } catch (error) {
+    throw new Error("Database error");
+  }
+};
+
+export const checkEmailSingup = async (value: string, User: ModelCtor<Model<any, any>>) => {
   try {
     const existingUser = await User.findOne({ where: { email: value } });
 
@@ -15,8 +29,8 @@ export const checkEmail = async (value: string, User: ModelCtor<Model<any, any>>
 };
 
 export const checkPasswordSecurity = (value: string): boolean => {
-  if (value.length < 5) {
-    throw new Error("Password must be at least 5 characters long.");
+  if (value.length < 8) {
+    throw new Error("Password must be at least 8 characters long.");
   }
 
   const passwordRegex: RegExp = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
