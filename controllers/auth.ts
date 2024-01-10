@@ -11,7 +11,6 @@ import CONFIG from "../config";
 
 const transport = nodemailer.createTransport(
   nodemailerSendgrid({
-    // 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
     apiKey: CONFIG.sendGridAPIKey,
   })
 );
