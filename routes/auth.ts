@@ -3,8 +3,8 @@ import { body } from "express-validator";
 
 import User from "../models/user";
 import Role from "../models/role";
-import { checkEmailSignup, checkPasswordSecurity, checkRole, checkUsernameSecurity } from "../util/validators";
-import { signup, signIn, validateUser, resendValidation } from "../controllers/auth";
+import { checkEmailExist, checkEmailNotExist, checkPasswordSecurity, checkRole, checkUsernameSecurity } from "../util/validators";
+import { signup, signIn, validateUser, resendValidation, sendResetPassword } from "../controllers/auth";
 import { isAuth } from "../middleware/is-auth";
 import { isValidated } from "../middleware/is-validated";
 
@@ -18,7 +18,7 @@ authRouter.put(
       .withMessage("Please enter a valid email.")
       .bail()
       .normalizeEmail()
-      .custom((value) => checkEmailSignup(value, User)),
+      .custom((value) => checkEmailNotExist(value, User)),
     body("password")
       .trim()
       .isLength({ min: 8 })
@@ -57,5 +57,11 @@ authRouter.post(
 authRouter.get("/verify/:token", validateUser);
 
 authRouter.post("/resend-validation", isAuth, resendValidation);
+
+authRouter.post(
+  "/send-reset-password",
+  body("email").custom((value) => checkEmailExist(value, User)),
+  sendResetPassword
+);
 
 export default authRouter;

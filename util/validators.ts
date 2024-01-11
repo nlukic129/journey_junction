@@ -14,12 +14,26 @@ export const checkUsernameSecurity = async (value: string, User: ModelCtor<Model
   }
 };
 
-export const checkEmailSignup = async (value: string, User: ModelCtor<Model<any, any>>) => {
+export const checkEmailNotExist = async (value: string, User: ModelCtor<Model<any, any>>) => {
   try {
     const existingUser = await User.findOne({ where: { email: value } });
 
     if (existingUser) {
       return Promise.reject("E-Mail address already exists!");
+    }
+
+    return true;
+  } catch (error: any) {
+    throw new Error("Database error");
+  }
+};
+
+export const checkEmailExist = async (value: string, User: ModelCtor<Model<any, any>>) => {
+  try {
+    const existingUser = await User.findOne({ where: { email: value } });
+
+    if (!existingUser) {
+      return Promise.reject("E-Mail address does not exist!");
     }
 
     return true;

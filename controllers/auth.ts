@@ -9,7 +9,7 @@ import path from "path";
 import User from "../models/user";
 import CONFIG from "../config";
 import { createError } from "../util/error";
-import { sendAccoundValidationMail } from "../util/mailer";
+import { sendAccoundValidationMail, sendResendPasswordMail } from "../util/mailer";
 
 const transport = nodemailer.createTransport(
   nodemailerSendgrid({
@@ -107,6 +107,28 @@ export const resendValidation = async (req: any, res: any, next: any) => {
     await sendAccoundValidationMail(transport, { user_uuid, first_name, email });
 
     res.status(200).json({ message: "Validation email successfully sent." });
+  } catch (err: any) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+export const sendResetPassword = async (req: any, res: any, next: any) => {
+  try {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      throw createError("Validation failed.", 422, errors);
+    }
+    const email = req.body.email;
+
+    const { user_uuid, first_name }: any = await User.findOne({ where: { email } });
+
+    await sendResendPasswordMail(transport, { user_uuid, first_name, email });
+
+    res.status(200).json({ message: "Resend password email successfully sent." });
   } catch (err: any) {
     if (!err.statusCode) {
       err.statusCode = 500;
