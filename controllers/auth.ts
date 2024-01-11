@@ -9,6 +9,7 @@ import path from "path";
 import User from "../models/user";
 import CONFIG from "../config";
 import { createError } from "../util/error";
+import { sendAccoundValidationMail } from "../util/mailer";
 
 const transport = nodemailer.createTransport(
   nodemailerSendgrid({
@@ -24,13 +25,7 @@ export const signup = async (req: any, res: any, next: any) => {
       throw createError("Validation failed.", 422, errors);
     }
 
-    const email = req.body.email;
-    const username = req.body.username;
-    const first_name = req.body.firstName;
-    const last_name = req.body.lastName;
-    const password = req.body.password;
-    const role_id = req.body.roleId;
-
+    const { email, username, first_name, last_name, password, role_id } = req.body;
     const hashedPw = await bcrypt.hash(password, 12);
 
     const { user_uuid }: any = await User.create({
@@ -42,18 +37,7 @@ export const signup = async (req: any, res: any, next: any) => {
       role_id: role_id,
     });
 
-    const token = jwt.sign({ user_uuid }, CONFIG.jwtSecret, { expiresIn: "24h" });
-
-    const relativePath = "../template/signup-email.ejs";
-    const absolutePath = path.resolve(__dirname, relativePath);
-    const template = await ejs.renderFile(absolutePath, { name: first_name, token: token });
-
-    await transport.sendMail({
-      from: CONFIG.emailSender,
-      to: email,
-      subject: "Journey Junction Email Validation",
-      html: template,
-    });
+    await sendAccoundValidationMail(transport, { user_uuid, first_name, email });
 
     res.status(201).json({ message: "User created!" });
   } catch (err: any) {
@@ -66,26 +50,10 @@ export const signup = async (req: any, res: any, next: any) => {
 
 export const signIn = async (req: any, res: any, next: any) => {
   try {
-    const user = req.body.user;
+    const { email, username, user_uuid, role_id, first_name, last_name } = req.body.user;
 
-    const token = jwt.sign(
-      {
-        email: user.email,
-        username: user.username,
-        userId: user.user_uuid,
-        role: user.role_id,
-      },
-      CONFIG.jwtSecret,
-      { expiresIn: "5h" }
-    );
-
-    const userData = {
-      user_uuid: user.user_uuid,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      email: user.email,
-      role_id: user.role_id,
-    };
+    const token = jwt.sign({ email, username, userId: user_uuid, role: role_id }, CONFIG.jwtSecret, { expiresIn: "5h" });
+    const userData = { user_uuid, first_name, last_name, email, role_id };
 
     res.status(200).json({ status: "success", token: token, userData });
   } catch (err: any) {
@@ -119,6 +87,27 @@ export const validateUser = async (req: any, res: any, next: any) => {
       return res.redirect("https://www.udemy.com");
     }
 
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+export const resendValidation = async (req: any, res: any, next: any) => {
+  try {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      throw createError("Validation failed.", 422, errors);
+    }
+
+    const { user_uuid, email, first_name } = req.body.user;
+
+    await sendAccoundValidationMail(transport, { user_uuid, first_name, email });
+
+    res.status(200).json({ message: "Validation email successfully sent." });
+  } catch (err: any) {
     if (!err.statusCode) {
       err.statusCode = 500;
     }
