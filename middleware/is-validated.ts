@@ -1,13 +1,18 @@
+import { createError } from "../util/error";
+
 export const isValidated = async (req: any, res: any, next: any) => {
   try {
     const isValidated = req.body.user.is_validated;
 
     if (!isValidated) {
-      throw new Error("User is not validated!");
+      throw createError("Validation failed.", 422, "User is not validated!");
     }
 
     next();
-  } catch (error) {
-    throw new Error("Database error");
+  } catch (err: any) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
   }
 };

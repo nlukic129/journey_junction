@@ -5,7 +5,7 @@ export const checkUsernameSecurity = async (value: string, User: ModelCtor<Model
     const existingUser = await User.findOne({ where: { username: value } });
 
     if (existingUser) {
-      throw new Error("Username address already exists!");
+      return Promise.reject("Username address already exists!");
     }
 
     return true;
@@ -19,23 +19,23 @@ export const checkEmailSignup = async (value: string, User: ModelCtor<Model<any,
     const existingUser = await User.findOne({ where: { email: value } });
 
     if (existingUser) {
-      throw new Error("E-Mail address already exists!");
+      return Promise.reject("E-Mail address already exists!");
     }
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     throw new Error("Database error");
   }
 };
 
-export const checkPasswordSecurity = (value: string): boolean => {
+export const checkPasswordSecurity = (value: string) => {
   if (value.length < 8) {
-    throw new Error("Password must be at least 8 characters long.");
+    return Promise.reject("Password must be at least 8 characters long.");
   }
 
   const passwordRegex: RegExp = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
   if (!passwordRegex.test(value)) {
-    throw new Error("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
+    return Promise.reject("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
   }
 
   return true;
@@ -46,7 +46,7 @@ export const checkRole = async (value: number, Role: ModelCtor<Model<any, any>>)
     const existingRole = await Role.findByPk(value);
 
     if (!existingRole) {
-      throw new Error("The role does not exist");
+      return Promise.reject("The role does not exist");
     }
 
     return true;

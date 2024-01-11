@@ -8,6 +8,7 @@ import path from "path";
 
 import User from "../models/user";
 import CONFIG from "../config";
+import { createError } from "../util/error";
 
 const transport = nodemailer.createTransport(
   nodemailerSendgrid({
@@ -20,8 +21,7 @@ export const signup = async (req: any, res: any, next: any) => {
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
-      const error = new Error("Validation failed.");
-      throw error;
+      throw createError("Validation failed.", 422, errors);
     }
 
     const email = req.body.email;
@@ -56,9 +56,11 @@ export const signup = async (req: any, res: any, next: any) => {
     });
 
     res.status(201).json({ message: "User created!" });
-  } catch (error) {
-    console.log(error);
-    throw new Error("Database error");
+  } catch (err: any) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
   }
 };
 
@@ -86,8 +88,11 @@ export const signIn = async (req: any, res: any, next: any) => {
     };
 
     res.status(200).json({ status: "success", token: token, userData });
-  } catch (error) {
-    throw new Error("Database error");
+  } catch (err: any) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
   }
 };
 
@@ -99,15 +104,24 @@ export const validateUser = async (req: any, res: any, next: any) => {
     const user: any = await User.findByPk(user_uuid);
 
     if (!user) {
-      throw new Error("User does not exist");
+      throw createError("Validation failed.", 422, "User does not exist");
     }
 
     if (!user.is_validated) {
       await User.update({ is_validated: true }, { where: { user_uuid: user_uuid } });
     }
 
+    // Redirect to login
     res.redirect("https://www.youtube.com/");
   } catch (err: any) {
-    console.log(err);
+    if (err.name === "TokenExpiredError" || err.name === "JsonWebTokenError") {
+      // Redirect to send mail again
+      return res.redirect("https://www.udemy.com");
+    }
+
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
   }
 };
