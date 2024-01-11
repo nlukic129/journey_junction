@@ -1,4 +1,6 @@
 import { Model, ModelCtor } from "sequelize";
+import jwt from "jsonwebtoken";
+import CONFIG from "../config";
 
 export const checkUsernameSecurity = async (value: string, User: ModelCtor<Model<any, any>>) => {
   try {
@@ -55,8 +57,8 @@ export const checkPasswordSecurity = (value: string) => {
   return true;
 };
 
-export const checkPasswordMatching = (value: string, newPassword: string) => {
-  if (value !== newPassword) {
+export const checkPasswordMatching = (value: string, password: string) => {
+  if (value !== password) {
     return Promise.reject("Passwords do not match.");
   }
   return true;

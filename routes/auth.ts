@@ -11,7 +11,7 @@ import {
   checkRole,
   checkUsernameSecurity,
 } from "../util/validators";
-import { signup, signIn, validateUser, resendValidation, sendResetPassword, resetPassword } from "../controllers/auth";
+import { signup, signIn, validateUser, resendValidation, sendResetPassword, resetPassword, resetPasswordPage } from "../controllers/auth";
 import { isAuth } from "../middleware/is-auth";
 import { isValidated } from "../middleware/is-validated";
 
@@ -71,13 +71,12 @@ authRouter.post(
   sendResetPassword
 );
 
-// TO DO: Dodati proveru tokena jer stize iz body-a
+authRouter.get("/reset-password-page/:token", resetPasswordPage);
+
 authRouter.post(
   "/reset-password",
-  body("newPassword").custom((value) => checkPasswordSecurity(value)),
-  body("password")
-    .custom((value) => checkPasswordSecurity(value))
-    .custom((value, { req }) => checkPasswordMatching(value, req.body.newPassword)),
+  body("password").custom((value) => checkPasswordSecurity(value)),
+  body("securePassword").custom((value, { req }) => checkPasswordMatching(value, req.body.password)),
   resetPassword
 );
 

@@ -3,13 +3,11 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import nodemailerSendgrid from "nodemailer-sendgrid";
-import ejs from "ejs";
-import path from "path";
 
 import User from "../models/user";
 import CONFIG from "../config";
 import { createError } from "../util/error";
-import { sendAccoundValidationMail, sendResendPasswordMail } from "../util/mailer";
+import { sendAccountValidationMail, sendResendPasswordMail } from "../util/mailer";
 
 const transport = nodemailer.createTransport(
   nodemailerSendgrid({
@@ -37,7 +35,7 @@ export const signup = async (req: any, res: any, next: any) => {
       role_id: role_id,
     });
 
-    await sendAccoundValidationMail(transport, { user_uuid, first_name, email });
+    await sendAccountValidationMail(transport, { user_uuid, first_name, email });
 
     res.status(201).json({ message: "User created!" });
   } catch (err: any) {
@@ -104,7 +102,7 @@ export const resendValidation = async (req: any, res: any, next: any) => {
 
     const { user_uuid, email, first_name } = req.body.user;
 
-    await sendAccoundValidationMail(transport, { user_uuid, first_name, email });
+    await sendAccountValidationMail(transport, { user_uuid, first_name, email });
 
     res.status(200).json({ message: "Validation email successfully sent." });
   } catch (err: any) {
@@ -137,6 +135,32 @@ export const sendResetPassword = async (req: any, res: any, next: any) => {
   }
 };
 
+export const resetPasswordPage = async (req: any, res: any, next: any) => {
+  try {
+    const { token } = req.params;
+    const { user_uuid }: any = jwt.verify(token, CONFIG.jwtSecret);
+
+    const user: any = await User.findByPk(user_uuid);
+
+    if (!user) {
+      throw createError("Validation failed.", 422, "User does not exist");
+    }
+
+    // Redirect to change password
+    res.redirect("https://chat.openai.com/?token=" + token);
+  } catch (err: any) {
+    if (err.name === "TokenExpiredError" || err.name === "JsonWebTokenError") {
+      // Redirect to send mail again
+      return res.redirect("https://www.udemy.com");
+    }
+
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
 export const resetPassword = async (req: any, res: any, next: any) => {
   try {
     const errors = validationResult(req);
@@ -145,7 +169,32 @@ export const resetPassword = async (req: any, res: any, next: any) => {
       throw createError("Validation failed.", 422, errors);
     }
 
-    // TO DO: Napisati logiku za promenu lozinke korisnika
+    const token = req.headers.authorization.split(" ")[1];
+    const { password } = req.body;
+
+    if (!token) {
+      throw createError("Unauthorized", 401, "Token is not exist");
+    }
+
+    const { user_uuid }: any = jwt.verify(token, CONFIG.jwtSecret, (err: any, decoded: any) => {
+      if (err) {
+        throw createError("Unauthorized", 401, "Token is not valid");
+      }
+
+      return decoded;
+    });
+
+    const user = await User.findByPk(user_uuid);
+
+    if (!user) {
+      throw createError("Validation failed.", 422, "User is not exist");
+    }
+
+    const hashedPw = await bcrypt.hash(password, 12);
+
+    await User.update({ password: hashedPw }, { where: { user_uuid } });
+
+    res.status(200).json({ message: "User password successfully updated " });
   } catch (err: any) {
     if (!err.statusCode) {
       err.statusCode = 500;
