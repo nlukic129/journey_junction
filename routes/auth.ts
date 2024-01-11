@@ -4,7 +4,7 @@ import { body } from "express-validator";
 import User from "../models/user";
 import Role from "../models/role";
 import { checkEmailSignup, checkPasswordSecurity, checkRole, checkUsernameSecurity } from "../util/validators";
-import { signup, signIn } from "../controllers/auth";
+import { signup, signIn, validateUser } from "../controllers/auth";
 import { isAuth } from "../middleware/is-auth";
 import { isValidated } from "../middleware/is-validated";
 
@@ -53,4 +53,7 @@ authRouter.post(
   isValidated,
   signIn
 );
+
+authRouter.get("/verify/:token", validateUser);
+
 export default authRouter;

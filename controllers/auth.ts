@@ -33,19 +33,20 @@ export const signup = async (req: any, res: any, next: any) => {
 
     const hashedPw = await bcrypt.hash(password, 12);
 
-    await User.create({
+    const { user_uuid }: any = await User.create({
       first_name,
       last_name,
       email,
       username,
       password: hashedPw,
       role_id: role_id,
-      is_validated: true,
     });
+
+    const token = jwt.sign({ user_uuid }, CONFIG.jwtSecret, { expiresIn: "24h" });
 
     const relativePath = "../template/signup-email.ejs";
     const absolutePath = path.resolve(__dirname, relativePath);
-    const template = await ejs.renderFile(absolutePath, { name: first_name });
+    const template = await ejs.renderFile(absolutePath, { name: first_name, token: token });
 
     await transport.sendMail({
       from: CONFIG.emailSender,
@@ -56,6 +57,7 @@ export const signup = async (req: any, res: any, next: any) => {
 
     res.status(201).json({ message: "User created!" });
   } catch (error) {
+    console.log(error);
     throw new Error("Database error");
   }
 };
@@ -72,7 +74,7 @@ export const signIn = async (req: any, res: any, next: any) => {
         role: user.role_id,
       },
       CONFIG.jwtSecret,
-      { expiresIn: "1h" }
+      { expiresIn: "5h" }
     );
 
     const userData = {
@@ -86,5 +88,26 @@ export const signIn = async (req: any, res: any, next: any) => {
     res.status(200).json({ status: "success", token: token, userData });
   } catch (error) {
     throw new Error("Database error");
+  }
+};
+
+export const validateUser = async (req: any, res: any, next: any) => {
+  try {
+    const { token } = req.params;
+    const { user_uuid }: any = jwt.verify(token, CONFIG.jwtSecret);
+
+    const user: any = await User.findByPk(user_uuid);
+
+    if (!user) {
+      throw new Error("User does not exist");
+    }
+
+    if (!user.is_validated) {
+      await User.update({ is_validated: true }, { where: { user_uuid: user_uuid } });
+    }
+
+    res.redirect("https://www.youtube.com/");
+  } catch (err: any) {
+    console.log(err);
   }
 };
