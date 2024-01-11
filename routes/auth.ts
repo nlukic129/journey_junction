@@ -3,8 +3,15 @@ import { body } from "express-validator";
 
 import User from "../models/user";
 import Role from "../models/role";
-import { checkEmailExist, checkEmailNotExist, checkPasswordSecurity, checkRole, checkUsernameSecurity } from "../util/validators";
-import { signup, signIn, validateUser, resendValidation, sendResetPassword } from "../controllers/auth";
+import {
+  checkEmailExist,
+  checkEmailNotExist,
+  checkPasswordMatching,
+  checkPasswordSecurity,
+  checkRole,
+  checkUsernameSecurity,
+} from "../util/validators";
+import { signup, signIn, validateUser, resendValidation, sendResetPassword, resetPassword } from "../controllers/auth";
 import { isAuth } from "../middleware/is-auth";
 import { isValidated } from "../middleware/is-validated";
 
@@ -62,6 +69,16 @@ authRouter.post(
   "/send-reset-password",
   body("email").custom((value) => checkEmailExist(value, User)),
   sendResetPassword
+);
+
+// TO DO: Dodati proveru tokena jer stize iz body-a
+authRouter.post(
+  "/reset-password",
+  body("newPassword").custom((value) => checkPasswordSecurity(value)),
+  body("password")
+    .custom((value) => checkPasswordSecurity(value))
+    .custom((value, { req }) => checkPasswordMatching(value, req.body.newPassword)),
+  resetPassword
 );
 
 export default authRouter;

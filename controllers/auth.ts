@@ -136,3 +136,20 @@ export const sendResetPassword = async (req: any, res: any, next: any) => {
     next(err);
   }
 };
+
+export const resetPassword = async (req: any, res: any, next: any) => {
+  try {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      throw createError("Validation failed.", 422, errors);
+    }
+
+    // TO DO: Napisati logiku za promenu lozinke korisnika
+  } catch (err: any) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};

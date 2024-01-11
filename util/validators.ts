@@ -55,6 +55,13 @@ export const checkPasswordSecurity = (value: string) => {
   return true;
 };
 
+export const checkPasswordMatching = (value: string, newPassword: string) => {
+  if (value !== newPassword) {
+    return Promise.reject("Passwords do not match.");
+  }
+  return true;
+};
+
 export const checkRole = async (value: number, Role: ModelCtor<Model<any, any>>) => {
   try {
     const existingRole = await Role.findByPk(value);
