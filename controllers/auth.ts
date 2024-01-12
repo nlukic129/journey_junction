@@ -9,6 +9,8 @@ import CONFIG from "../config";
 import { createError } from "../util/error";
 import { sendAccountValidationMail, sendResendPasswordMail } from "../util/mailer";
 import UserModel from "../models/user";
+import RoleModel from "../models/role";
+import { checkTokenValidity } from "../util/validators";
 
 const transport = nodemailer.createTransport(
   nodemailerSendgrid({
@@ -24,23 +26,27 @@ export const signup = async (req: any, res: any, next: any) => {
       throw createError("Validation failed.", 422, errors);
     }
 
-    const { email, username, first_name, last_name, password, role_id } = req.body;
+    const { email, username, first_name, last_name, password, role_id, name } = req.body;
     const hashedPw = await bcrypt.hash(password, 12);
 
     const user = new User({
       first_name,
       last_name,
-      email,
+      name,
+      email: {
+        address: email,
+        verified: false,
+      },
       username,
       password: hashedPw,
-      role_id: role_id,
+      role: role_id,
     });
 
     await user.save();
 
     const user_uuid = user._id.toString();
 
-    await sendAccountValidationMail(transport, { user_uuid, first_name, email });
+    await sendAccountValidationMail(transport, { user_uuid, username, email });
 
     res.status(201).json({ message: "User created!" });
   } catch (err: any) {
@@ -53,12 +59,27 @@ export const signup = async (req: any, res: any, next: any) => {
 
 export const signIn = async (req: any, res: any, next: any) => {
   try {
-    const { email, username, _id, role_id, first_name, last_name } = req.body.user;
+    const { user } = req.body;
+    const { email, username, _id, role, first_name, last_name, name } = user;
+    let token = email.token;
 
-    const token = jwt.sign({ email, username, userId: _id.toString(), role: role_id }, CONFIG.jwtSecret, { expiresIn: "5h" });
-    const userData = { user_uuid: _id.toString(), first_name, last_name, email, role_id };
+    const { role_name }: any = await RoleModel.findById(role);
 
-    res.status(200).json({ status: "success", token: token, userData });
+    if (token && checkTokenValidity(token)) {
+      return res.status(200).json({
+        status: "success",
+        token: token,
+        usedData: { email, username, _id, role_name, first_name, last_name, name },
+        message: "You are already logged in",
+      });
+    }
+
+    token = jwt.sign({ email, username, userId: _id.toString(), role: role }, CONFIG.jwtSecret, { expiresIn: "5h" });
+
+    user.email.token = token;
+    await user.save();
+
+    res.status(200).json({ status: "success", token: token, userData: { user_uuid: _id.toString(), first_name, last_name, email, role_name, name } });
   } catch (err: any) {
     if (!err.statusCode) {
       err.statusCode = 500;
@@ -78,8 +99,8 @@ export const validateUser = async (req: any, res: any, next: any) => {
       throw createError("Validation failed.", 422, "User does not exist");
     }
 
-    if (!user.is_validated) {
-      user.is_validated = true;
+    if (!user.email.verified) {
+      user.email.verified = true;
       await user.save();
     }
 
@@ -108,7 +129,7 @@ export const resendValidation = async (req: any, res: any, next: any) => {
 
     const { _id, email, first_name } = req.body.user;
 
-    await sendAccountValidationMail(transport, { user_uuid: _id.toString(), first_name, email });
+    await sendAccountValidationMail(transport, { user_uuid: _id.toString(), first_name, email: email.address });
 
     res.status(200).json({ message: "Validation email successfully sent." });
   } catch (err: any) {

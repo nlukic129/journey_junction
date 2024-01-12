@@ -15,7 +15,7 @@ export const isAuth = async (req: any, res: any, next: any) => {
     const email = req.body.email;
     const password = req.body.password;
 
-    const existingUser: any = await User.findOne({ email });
+    const existingUser: any = await User.findOne({ "email.address": email });
 
     if (!existingUser) {
       throw createError("Validation failed.", 422, "A user with this e-mail could not be found.");

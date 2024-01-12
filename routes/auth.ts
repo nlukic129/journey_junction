@@ -1,11 +1,10 @@
 import express from "express";
 import { body } from "express-validator";
 
-import User from "../models/user";
-import Role from "../models/role";
 import {
   checkEmailExist,
   checkEmailNotExist,
+  checkName,
   checkPasswordMatching,
   checkPasswordSecurity,
   checkRole,
@@ -14,52 +13,36 @@ import {
 import { signup, signIn, validateUser, resendValidation, sendResetPassword, resetPassword, resetPasswordPage } from "../controllers/auth";
 import { isAuth } from "../middleware/is-auth";
 import { isValidated } from "../middleware/is-validated";
+import { ErrorMessage } from "../enum/error-type";
+import { UserType } from "../enum/user-type";
 
 const authRouter = express.Router();
 
 authRouter.put(
   "/signup",
   [
+    body("role").custom((value, { req }) => checkRole(value, req)),
     body("email")
       .isEmail()
-      .withMessage("Please enter a valid email.")
+      .withMessage(ErrorMessage.EmailValidation)
       .bail()
       .normalizeEmail()
       .custom((value) => checkEmailNotExist(value)),
-    body("password")
-      .trim()
-      .isLength({ min: 8 })
-      .withMessage("Password must be at least 5 characters long.")
-      .bail()
-      .custom((value) => checkPasswordSecurity(value)),
+    body("password").custom((value) => checkPasswordSecurity(value)),
     body("username")
       .trim()
       .isLength({ min: 4 })
-      .withMessage("Username must be at least 4 characters long.")
+      .withMessage(ErrorMessage.UsernameValidation)
       .bail()
       .custom((value) => checkUsernameSecurity(value)),
-    body("first_name").trim().not().isEmpty(),
-    body("last_name").trim().not().isEmpty(),
-    body("role_id").custom((value) => checkRole(value)),
+    body("first_name").custom((value, { req }) => (req.body.role === UserType.Tourist ? checkName(value, { req }, ErrorMessage.FirstName) : true)),
+    body("last_name").custom((value, { req }) => (req.body.role === UserType.Tourist ? checkName(value, { req }, ErrorMessage.LastName) : true)),
+    body("name").custom((value, { req }) => (req.body.role === UserType.Agency ? checkName(value, { req }, ErrorMessage.Name) : true)),
   ],
   signup
 );
 
-authRouter.post(
-  "/sign-in",
-  [
-    body("email").isEmail().withMessage("Please enter a valid email.").bail().normalizeEmail(),
-    body("password")
-      .trim()
-      .isLength({ min: 5 })
-      .withMessage("Password must be at least 5 characters long.")
-      .bail()
-      .custom((value) => checkPasswordSecurity(value)),
-  ],
-  isAuth,
-  isValidated,
-  signIn
-);
+authRouter.post("/sign-in", [body("email").isEmail().withMessage(ErrorMessage.EmailValidation).bail().normalizeEmail()], isAuth, isValidated, signIn);
 
 authRouter.get("/verify/:token", validateUser);
 

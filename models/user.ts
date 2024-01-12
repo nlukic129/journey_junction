@@ -1,30 +1,34 @@
 import mongoose, { Schema, Document } from "mongoose";
-import { IRole } from "./role";
+import { UserType } from "../enum/user-type";
+import { IEmail } from "../interface/email";
 
 interface IUser extends Document {
-  user_uuid: string;
-  first_name: string;
-  last_name: string;
-  email: string;
+  type: UserType;
+  email: IEmail;
   username: string;
   password: string;
-  is_validated: boolean;
-  role: mongoose.Types.ObjectId | IRole;
+  role: Schema.Types.ObjectId;
+  name: string;
+  first_name: string;
+  last_name: string;
+  following: Array<Schema.Types.ObjectId>;
+  followers: Array<Schema.Types.ObjectId>;
 }
 
 const userSchema = new Schema<IUser>({
-  first_name: {
-    type: String,
-    required: true,
-  },
-  last_name: {
-    type: String,
-    required: true,
-  },
   email: {
-    type: String,
-    required: true,
-    unique: true,
+    address: {
+      type: String,
+      lowercase: true,
+      unique: true,
+      required: true,
+    },
+    token: String,
+    verified: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
   },
   username: {
     type: String,
@@ -35,15 +39,25 @@ const userSchema = new Schema<IUser>({
     type: String,
     required: true,
   },
-  is_validated: {
-    type: Boolean,
-    default: false,
-    required: true,
+  role: {
+    type: Schema.Types.ObjectId,
+    ref: "Role",
   },
-  // role: {
-  //   type: Schema.Types.ObjectId,
-  //   ref: "Role",
-  // },
+  name: String,
+  first_name: String,
+  last_name: String,
+  following: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
+  followers: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
 });
 
 const UserModel = mongoose.model<IUser>("User", userSchema);
