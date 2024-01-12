@@ -1,41 +1,51 @@
-import { DataTypes } from "sequelize";
+import mongoose, { Schema, Document } from "mongoose";
+import { IRole } from "./role";
 
-import { sequelize } from "../database/database";
+interface IUser extends Document {
+  user_uuid: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  username: string;
+  password: string;
+  is_validated: boolean;
+  role: mongoose.Types.ObjectId | IRole;
+}
 
-const User = sequelize.define("User", {
-  user_uuid: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    allowNull: false,
-    primaryKey: true,
-  },
+const userSchema = new Schema<IUser>({
   first_name: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: String,
+    required: true,
   },
   last_name: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: String,
+    required: true,
   },
   email: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: String,
+    required: true,
     unique: true,
   },
   username: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: String,
+    required: true,
     unique: true,
   },
   password: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: String,
+    required: true,
   },
   is_validated: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-    allowNull: false,
+    type: Boolean,
+    default: false,
+    required: true,
   },
+  // role: {
+  //   type: Schema.Types.ObjectId,
+  //   ref: "Role",
+  // },
 });
 
-export default User;
+const UserModel = mongoose.model<IUser>("User", userSchema);
+
+export default UserModel;

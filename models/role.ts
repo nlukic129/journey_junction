@@ -1,17 +1,17 @@
-import { DataTypes } from "sequelize";
+import mongoose, { Schema, Document } from "mongoose";
 
-import { sequelize } from "../database/database";
+export interface IRole extends Document {
+  role_id: number;
+  role_name: string;
+}
 
-const Role = sequelize.define("Role", {
-  role_id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true,
-  },
+const roleSchema = new Schema<IRole>({
   role_name: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: String,
+    required: true,
   },
 });
 
-export default Role;
+const RoleModel = mongoose.model<IRole>("Role", roleSchema);
+
+export default RoleModel;
