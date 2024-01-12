@@ -1,4 +1,4 @@
-import { syncDatabase } from "./database";
+import { syncDatabase } from "../database/database";
 
 export const runServer = async (app: any) => {
   await syncDatabase();

@@ -2,7 +2,7 @@ import express from "express";
 import bodyParser from "body-parser";
 
 import { runServer } from "./util/server";
-import { createRelations } from "./util/relations";
+import { createRelations } from "./database/relations";
 import authRouter from "./routes/auth";
 
 const app = express();
