@@ -1,27 +1,12 @@
-import { Model, ModelCtor } from "sequelize";
-import jwt from "jsonwebtoken";
-import CONFIG from "../config";
+import UserModel from "../models/user";
+import RoleModel from "../models/role";
 
-export const checkUsernameSecurity = async (value: string, User: ModelCtor<Model<any, any>>) => {
+export const checkUsernameSecurity = async (value: string) => {
   try {
-    const existingUser = await User.findOne({ where: { username: value } });
+    const existingUser = await UserModel.findOne({ username: value });
 
     if (existingUser) {
-      return Promise.reject("Username address already exists!");
-    }
-
-    return true;
-  } catch (error) {
-    throw new Error("Database error");
-  }
-};
-
-export const checkEmailNotExist = async (value: string, User: ModelCtor<Model<any, any>>) => {
-  try {
-    const existingUser = await User.findOne({ where: { email: value } });
-
-    if (existingUser) {
-      return Promise.reject("E-Mail address already exists!");
+      return Promise.reject("Username already exists!");
     }
 
     return true;
@@ -30,12 +15,26 @@ export const checkEmailNotExist = async (value: string, User: ModelCtor<Model<an
   }
 };
 
-export const checkEmailExist = async (value: string, User: ModelCtor<Model<any, any>>) => {
+export const checkEmailNotExist = async (value: string) => {
   try {
-    const existingUser = await User.findOne({ where: { email: value } });
+    const existingUser = await UserModel.findOne({ email: value });
+
+    if (existingUser) {
+      return Promise.reject("E-Mail address already exists!");
+    }
+
+    return true;
+  } catch (error: any) {
+    throw new Error("Dat abase error");
+  }
+};
+
+export const checkEmailExist = async (value: string) => {
+  try {
+    const existingUser = await UserModel.findOne({ email: value });
 
     if (!existingUser) {
-      return Promise.reject("E-Mail address does not exist!");
+      return Promise.reject("E-Mail does not already exists!");
     }
 
     return true;
@@ -64,16 +63,16 @@ export const checkPasswordMatching = (value: string, password: string) => {
   return true;
 };
 
-export const checkRole = async (value: number, Role: ModelCtor<Model<any, any>>) => {
+export const checkRole = async (value: number) => {
   try {
-    const existingRole = await Role.findByPk(value);
+    const existingRole = await RoleModel.findById(value);
 
     if (!existingRole) {
       return Promise.reject("The role does not exist");
     }
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     throw new Error("Database error");
   }
 };

@@ -25,7 +25,7 @@ authRouter.put(
       .withMessage("Please enter a valid email.")
       .bail()
       .normalizeEmail()
-      .custom((value) => checkEmailNotExist(value, User)),
+      .custom((value) => checkEmailNotExist(value)),
     body("password")
       .trim()
       .isLength({ min: 8 })
@@ -37,10 +37,10 @@ authRouter.put(
       .isLength({ min: 4 })
       .withMessage("Username must be at least 4 characters long.")
       .bail()
-      .custom((value) => checkUsernameSecurity(value, User)),
-    body("firstName").trim().not().isEmpty(),
-    body("lastName").trim().not().isEmpty(),
-    body("roleId").custom((value) => checkRole(value, Role)),
+      .custom((value) => checkUsernameSecurity(value)),
+    body("first_name").trim().not().isEmpty(),
+    body("last_name").trim().not().isEmpty(),
+    body("role_id").custom((value) => checkRole(value)),
   ],
   signup
 );
@@ -67,7 +67,7 @@ authRouter.post("/resend-validation", isAuth, resendValidation);
 
 authRouter.post(
   "/send-reset-password",
-  body("email").custom((value) => checkEmailExist(value, User)),
+  body("email").custom((value) => checkEmailExist(value)),
   sendResetPassword
 );
 

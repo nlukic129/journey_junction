@@ -2,7 +2,6 @@ import express from "express";
 import bodyParser from "body-parser";
 
 import { runServer } from "./util/server";
-import { createRelations } from "./database/relations";
 import authRouter from "./routes/auth";
 
 const app = express();
@@ -25,5 +24,4 @@ app.use((error: any, req: any, res: any, next: any) => {
   res.status(status).json({ message: message, data: data });
 });
 
-createRelations();
 runServer(app);
