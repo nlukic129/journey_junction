@@ -1,21 +1,13 @@
-import mongoose, { Schema, Document } from "mongoose";
-import { UserType } from "../enum/user-type";
-import { IEmail } from "../interface/email";
+import mongoose, { Schema } from "mongoose";
+import { IUser } from "../interface/user";
 
-interface IUser extends Document {
-  type: UserType;
-  email: IEmail;
-  username: string;
-  password: string;
-  role: Schema.Types.ObjectId;
-  name: string;
+interface ITourist extends IUser {
   first_name: string;
   last_name: string;
   following: Array<Schema.Types.ObjectId>;
-  followers: Array<Schema.Types.ObjectId>;
 }
 
-const userSchema = new Schema<IUser>({
+const userSchema = new Schema<ITourist>({
   email: {
     address: {
       type: String,
@@ -43,23 +35,16 @@ const userSchema = new Schema<IUser>({
     type: Schema.Types.ObjectId,
     ref: "Role",
   },
-  name: String,
   first_name: String,
   last_name: String,
   following: [
     {
       type: Schema.Types.ObjectId,
-      ref: "User",
-    },
-  ],
-  followers: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Agency",
     },
   ],
 });
 
-const UserModel = mongoose.model<IUser>("User", userSchema);
+const UserModel = mongoose.model<ITourist>("Tourist", userSchema);
 
 export default UserModel;

@@ -1,7 +1,6 @@
 import { validationResult } from "express-validator";
 import bcrypt from "bcryptjs";
 
-import User from "../models/user";
 import { createError } from "../util/error";
 
 export const isAuth = async (req: any, res: any, next: any) => {
@@ -14,6 +13,7 @@ export const isAuth = async (req: any, res: any, next: any) => {
 
     const email = req.body.email;
     const password = req.body.password;
+    const User: any = req.body.UserModel;
 
     const existingUser: any = await User.findOne({ "email.address": email });
 

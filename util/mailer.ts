@@ -7,9 +7,9 @@ import { createError } from "./error";
 
 export const sendAccountValidationMail = async (transport: any, userData: any) => {
   try {
-    const { user_uuid, username, email } = userData;
+    const { user_uuid, role_id, email, username } = userData;
 
-    const token = jwt.sign({ user_uuid }, CONFIG.jwtSecret, { expiresIn: "24h" });
+    const token = jwt.sign({ user_uuid, role_id }, CONFIG.jwtSecret, { expiresIn: "24h" });
     const template = await ejs.renderFile(path.resolve(__dirname, "../template/signup-email.ejs"), { name: username, token: token });
 
     await transport.sendMail({
@@ -25,9 +25,9 @@ export const sendAccountValidationMail = async (transport: any, userData: any) =
 
 export const sendResendPasswordMail = async (transport: any, userData: any) => {
   try {
-    const { user_uuid, email } = userData;
+    const { user_uuid, email, role_id } = userData;
 
-    const token = jwt.sign({ user_uuid }, CONFIG.jwtSecret, { expiresIn: "1h" });
+    const token = jwt.sign({ user_uuid, role_id }, CONFIG.jwtSecret, { expiresIn: "1h" });
     const template = await ejs.renderFile(path.resolve(__dirname, "../template/change-password.ejs"), { token: token });
 
     await transport.sendMail({

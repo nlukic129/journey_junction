@@ -6,7 +6,7 @@ export interface IRole extends Document {
 }
 
 const roleSchema = new Schema<IRole>({
-  role_name: { type: String, required: true, enum: Object.values(UserType) },
+  role_name: { type: String, required: true, enum: Object.values(UserType), unique: true },
 });
 
 const RoleModel = mongoose.model<IRole>("Role", roleSchema);

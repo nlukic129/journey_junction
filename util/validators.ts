@@ -1,13 +1,19 @@
 import jwt from "jsonwebtoken";
 import CONFIG from "../config";
 
-import UserModel from "../models/user";
-import RoleModel from "../models/role";
 import { ErrorMessage } from "../enum/error-type";
+import Tourist from "../models/tourist";
+import Agency from "../models/agency";
 
-export const checkUsernameSecurity = async (value: string) => {
+export const checkUsernameNotExist = async (value: string, req: any) => {
   try {
-    const existingUser = await UserModel.findOne({ username: value });
+    let existingUser = await Tourist.findOne({ username: value });
+
+    if (existingUser) {
+      return Promise.reject(ErrorMessage.UsernameExist);
+    }
+
+    existingUser = await Agency.findOne({ username: value });
 
     if (existingUser) {
       return Promise.reject(ErrorMessage.UsernameExist);
@@ -19,9 +25,15 @@ export const checkUsernameSecurity = async (value: string) => {
   }
 };
 
-export const checkEmailNotExist = async (value: string) => {
+export const checkEmailNotExist = async (value: string, req: any) => {
   try {
-    const existingUser = await UserModel.findOne({ "email.address": value });
+    let existingUser = await Tourist.findOne({ "email.address": value });
+
+    if (existingUser) {
+      return Promise.reject(ErrorMessage.EmailExist);
+    }
+
+    existingUser = await Agency.findOne({ "email.address": value });
 
     if (existingUser) {
       return Promise.reject(ErrorMessage.EmailExist);
@@ -33,15 +45,21 @@ export const checkEmailNotExist = async (value: string) => {
   }
 };
 
-export const checkEmailExist = async (value: string) => {
+export const checkEmailExist = async (value: string, req: any) => {
   try {
-    const existingUser = await UserModel.findOne({ "email.address": value });
+    let existingUser = await Tourist.findOne({ "email.address": value });
 
-    if (!existingUser) {
-      return Promise.reject(ErrorMessage.EmailNotExist);
+    if (existingUser) {
+      return true;
     }
 
-    return true;
+    existingUser = await Agency.findOne({ "email.address": value });
+
+    if (existingUser) {
+      return true;
+    }
+
+    return Promise.reject(ErrorMessage.EmailNotExist);
   } catch (error: any) {
     throw new Error(ErrorMessage.Db);
   }
@@ -61,22 +79,6 @@ export const checkPasswordMatching = (value: string, password: string) => {
     return Promise.reject(ErrorMessage.PswNotMatch);
   }
   return true;
-};
-
-export const checkRole = async (value: number, req: any) => {
-  try {
-    const existingRole = await RoleModel.findOne({ role_name: value });
-
-    if (!existingRole) {
-      return Promise.reject(ErrorMessage.RoleDoesNotExist);
-    }
-
-    req.body.role_id = existingRole._id.toString();
-
-    return true;
-  } catch (error: any) {
-    throw new Error(ErrorMessage.Db);
-  }
 };
 
 export const checkName = (firstName: string, req: any, errorMessage: ErrorMessage) => {
