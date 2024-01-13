@@ -1,4 +1,3 @@
-// import { syncDatabase } from "../database/database";
 import CONFIG from "../config";
 import mongoose from "mongoose";
 

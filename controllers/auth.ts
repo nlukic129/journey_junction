@@ -3,13 +3,11 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import nodemailerSendgrid from "nodemailer-sendgrid";
+import { ObjectId } from "mongodb";
 
-import User from "../models/user";
 import CONFIG from "../config";
 import { createError } from "../util/error";
 import { sendAccountValidationMail, sendResendPasswordMail } from "../util/mailer";
-import UserModel from "../models/user";
-import RoleModel from "../models/role";
 import { checkTokenValidity } from "../util/validators";
 
 const transport = nodemailer.createTransport(
@@ -26,6 +24,8 @@ export const signup = async (req: any, res: any, next: any) => {
       throw createError("Validation failed.", 422, errors);
     }
 
+    const User: any = req.body.UserModel;
+
     const { email, username, first_name, last_name, password, role_id, name } = req.body;
     const hashedPw = await bcrypt.hash(password, 12);
 
@@ -39,14 +39,12 @@ export const signup = async (req: any, res: any, next: any) => {
       },
       username,
       password: hashedPw,
-      role: role_id,
+      role: new ObjectId(role_id),
     });
 
     await user.save();
 
-    const user_uuid = user._id.toString();
-
-    await sendAccountValidationMail(transport, { user_uuid, username, email });
+    await sendAccountValidationMail(transport, { user_uuid: user._id.toString(), role_id, email, username });
 
     res.status(201).json({ message: "User created!" });
   } catch (err: any) {
@@ -60,26 +58,22 @@ export const signup = async (req: any, res: any, next: any) => {
 export const signIn = async (req: any, res: any, next: any) => {
   try {
     const { user } = req.body;
-    const { email, username, _id, role, first_name, last_name, name } = user;
+    const { email, _id, role } = user;
     let token = email.token;
-
-    const { role_name }: any = await RoleModel.findById(role);
 
     if (token && checkTokenValidity(token)) {
       return res.status(200).json({
         status: "success",
         token: token,
-        usedData: { email, username, _id, role_name, first_name, last_name, name },
         message: "You are already logged in",
       });
     }
-
-    token = jwt.sign({ email, username, userId: _id.toString(), role: role }, CONFIG.jwtSecret, { expiresIn: "5h" });
+    token = jwt.sign({ user_uuid: _id.toString(), role_id: role.toString() }, CONFIG.jwtSecret, { expiresIn: "5h" });
 
     user.email.token = token;
     await user.save();
 
-    res.status(200).json({ status: "success", token: token, userData: { user_uuid: _id.toString(), first_name, last_name, email, role_name, name } });
+    res.status(200).json({ status: "success", token: token });
   } catch (err: any) {
     if (!err.statusCode) {
       err.statusCode = 500;
@@ -93,7 +87,9 @@ export const validateUser = async (req: any, res: any, next: any) => {
     const { token } = req.params;
     const { user_uuid }: any = jwt.verify(token, CONFIG.jwtSecret);
 
-    const user = await UserModel.findById(user_uuid);
+    const User: any = req.body.UserModel;
+
+    const user = await User.findById(user_uuid);
 
     if (!user) {
       throw createError("Validation failed.", 422, "User does not exist");
@@ -127,9 +123,11 @@ export const resendValidation = async (req: any, res: any, next: any) => {
       throw createError("Validation failed.", 422, errors);
     }
 
-    const { _id, email, first_name } = req.body.user;
+    const { _id, email, username, role } = req.body.user;
 
-    await sendAccountValidationMail(transport, { user_uuid: _id.toString(), first_name, email: email.address });
+    const user_uuid = _id ? _id.toString() : "";
+    const role_id = role ? role.toString() : "";
+    await sendAccountValidationMail(transport, { user_uuid, role_id, email, username });
 
     res.status(200).json({ message: "Validation email successfully sent." });
   } catch (err: any) {
@@ -148,10 +146,11 @@ export const sendResetPassword = async (req: any, res: any, next: any) => {
       throw createError("Validation failed.", 422, errors);
     }
     const email = req.body.email;
+    const User: any = req.body.UserModel;
 
-    const { _id, first_name }: any = await User.findOne({ email });
+    const { _id, first_name, role }: any = await User.findOne({ "email.address": email });
 
-    await sendResendPasswordMail(transport, { user_uuid: _id.toString(), first_name, email });
+    await sendResendPasswordMail(transport, { user_uuid: _id.toString(), first_name, email, role_id: role.toString() });
 
     res.status(200).json({ message: "Resend password email successfully sent." });
   } catch (err: any) {
@@ -167,7 +166,9 @@ export const resetPasswordPage = async (req: any, res: any, next: any) => {
     const { token } = req.params;
     const { user_uuid }: any = jwt.verify(token, CONFIG.jwtSecret);
 
-    const user = await UserModel.findById(user_uuid);
+    const User: any = req.body.UserModel;
+
+    const user = await User.findById(user_uuid);
 
     if (!user) {
       throw createError("Validation failed.", 422, "User does not exist");
@@ -196,6 +197,8 @@ export const resetPassword = async (req: any, res: any, next: any) => {
       throw createError("Validation failed.", 422, errors);
     }
 
+    const User: any = req.body.UserModel;
+
     const token = req.headers.authorization.split(" ")[1];
     const { password } = req.body;
 
@@ -205,7 +208,7 @@ export const resetPassword = async (req: any, res: any, next: any) => {
 
     const { user_uuid }: any = jwt.verify(token, CONFIG.jwtSecret);
 
-    const user = await UserModel.findById(user_uuid);
+    const user = await User.findById(user_uuid);
 
     if (!user) {
       throw createError("Validation failed.", 422, "User is not exist");
