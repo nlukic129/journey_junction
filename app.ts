@@ -3,6 +3,8 @@ import bodyParser from "body-parser";
 
 import { runServer } from "./util/server";
 import authRouter from "./routes/auth";
+import { isUserLoggedIn } from "./middleware/is-user-logged-in";
+import followRouter from "./routes/follow";
 
 const app = express();
 
@@ -16,6 +18,7 @@ app.use((req, res, next) => {
 });
 
 app.use("/auth", authRouter);
+app.use("/follow", isUserLoggedIn, followRouter);
 
 app.use((error: any, req: any, res: any, next: any) => {
   const status = error.statusCode || 500;

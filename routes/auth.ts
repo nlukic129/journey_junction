@@ -60,7 +60,7 @@ authRouter.post("/send-reset-password", roleChecker, [body("email").custom((valu
 authRouter.get("/reset-password-page/:token", roleChecker, resetPasswordPage);
 
 authRouter.post(
-  "/reset-password/",
+  "/reset-password",
   roleChecker,
   body("password").custom((value) => checkPasswordSecurity(value)),
   body("securePassword").custom((value, { req }) => checkPasswordMatching(value, req.body.password)),

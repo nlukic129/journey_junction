@@ -5,9 +5,11 @@ interface ITourist extends IUser {
   first_name: string;
   last_name: string;
   following: Array<Schema.Types.ObjectId>;
+
+  followAgency(agencyId: Schema.Types.ObjectId): void;
 }
 
-const userSchema = new Schema<ITourist>({
+const touristSchema = new Schema<ITourist>({
   email: {
     address: {
       type: String,
@@ -45,6 +47,16 @@ const userSchema = new Schema<ITourist>({
   ],
 });
 
-const UserModel = mongoose.model<ITourist>("Tourist", userSchema);
+touristSchema.methods.followAgency = async function (agencyId: Schema.Types.ObjectId) {
+  this.following.push(agencyId);
+  await this.save();
+};
 
-export default UserModel;
+touristSchema.methods.unfollowAgency = async function (agencyId: Schema.Types.ObjectId) {
+  this.following = this.following.filter((item: Schema.Types.ObjectId) => item.toString() !== agencyId.toString());
+  await this.save();
+};
+
+const TouristModel = mongoose.model<ITourist>("Tourist", touristSchema);
+
+export default TouristModel;

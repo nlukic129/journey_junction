@@ -10,7 +10,7 @@ interface IAgency extends IUser {
   followers: Array<Schema.Types.ObjectId>;
 }
 
-const userSchema = new Schema<IAgency>({
+const agencySchema = new Schema<IAgency>({
   email: {
     address: {
       type: String,
@@ -47,6 +47,16 @@ const userSchema = new Schema<IAgency>({
   ],
 });
 
-const UserModel = mongoose.model<IAgency>("Agency", userSchema);
+agencySchema.methods.beFollowed = async function (touristId: Schema.Types.ObjectId) {
+  this.followers.push(touristId);
+  await this.save();
+};
 
-export default UserModel;
+agencySchema.methods.beUnfollowed = async function (touristId: Schema.Types.ObjectId) {
+  this.followers = this.followers.filter((item: Schema.Types.ObjectId) => item.toString() !== touristId.toString());
+  await this.save();
+};
+
+const AgencyModel = mongoose.model<IAgency>("Agency", agencySchema);
+
+export default AgencyModel;
