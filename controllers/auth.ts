@@ -9,6 +9,7 @@ import CONFIG from "../config";
 import { createError } from "../util/error";
 import { sendAccountValidationMail, sendResendPasswordMail } from "../util/mailer";
 import { checkTokenValidity } from "../util/validators";
+import { getModel } from "../util/role";
 
 const transport = nodemailer.createTransport(
   nodemailerSendgrid({
@@ -77,6 +78,37 @@ export const signIn = async (req: any, res: any, next: any) => {
   } catch (err: any) {
     if (!err.statusCode) {
       err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+export const signOut = async (req: any, res: any, next: any) => {
+  try {
+    const token = req.headers.authorization.split(" ")[1];
+    const { user_uuid }: any = jwt.verify(token, CONFIG.jwtSecret);
+
+    const User: any = req.body.UserModel;
+
+    const user = await User.findById(user_uuid);
+
+    if (!user) {
+      throw createError("Validation failed.", 422, "User does not exist");
+    }
+
+    user.email.token = "";
+    await user.save();
+
+    res.status(200).json({ message: "User is logged out" });
+  } catch (err: any) {
+    if (err.name === "JsonWebTokenError") {
+      err = createError("Unauthorized", 401, "Invalid token");
+    } else if (err.name === "TokenExpiredError") {
+      err = createError("Unauthorized", 401, "Token has expired");
+    } else {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
     }
     next(err);
   }
@@ -221,8 +253,14 @@ export const resetPassword = async (req: any, res: any, next: any) => {
 
     res.status(200).json({ message: "User password successfully updated" });
   } catch (err: any) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
+    if (err.name === "JsonWebTokenError") {
+      err = createError("Unauthorized", 401, "Invalid token");
+    } else if (err.name === "TokenExpiredError") {
+      err = createError("Unauthorized", 401, "Token has expired");
+    } else {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
     }
     next(err);
   }

@@ -9,7 +9,7 @@ import {
   checkPasswordSecurity,
   checkUsernameNotExist,
 } from "../util/validators";
-import { signup, signIn, validateUser, resendValidation, sendResetPassword, resetPassword, resetPasswordPage } from "../controllers/auth";
+import { signup, signIn, validateUser, resendValidation, sendResetPassword, resetPassword, resetPasswordPage, signOut } from "../controllers/auth";
 import { isAuth } from "../middleware/is-auth";
 import { isValidated } from "../middleware/is-validated";
 import { ErrorMessage } from "../enum/error-type";
@@ -54,6 +54,8 @@ authRouter.post(
   isValidated,
   signIn
 );
+
+authRouter.post("/sign-out", roleChecker, signOut);
 
 authRouter.post("/send-reset-password", roleChecker, [body("email").custom((value, { req }) => checkEmailExist(value, req))], sendResetPassword);
 
