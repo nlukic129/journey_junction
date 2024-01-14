@@ -96,3 +96,27 @@ export const checkTokenValidity = (token: string) => {
     return false;
   }
 };
+
+export const checkAgencyIdValidity = async (agencyId: string, req: any) => {
+  const agency = await Agency.findById(agencyId);
+
+  if (!agency) {
+    return Promise.reject("Agency does not exist!");
+  }
+
+  req.body.agency = agency;
+
+  return true;
+};
+
+export const checkTouristIdValidity = async (touristId: string, req: any) => {
+  const tourist = await Tourist.findById(touristId);
+
+  if (!tourist) {
+    return Promise.reject("Tourist does not exist!");
+  }
+
+  req.body.tourist = tourist;
+
+  return true;
+};
